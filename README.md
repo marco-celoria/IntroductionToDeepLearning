@@ -74,7 +74,7 @@ After submission:
  - Opening this link in your browser gives access to a Jupyter environment running on Leonardo
  - Your home directory on Leonardo is automatically mounted and used for notebooks and files
 
-###Compute vs Login Nodes
+### Compute vs Login Nodes
 
 The environment you get depends on the partition you choose:
 
