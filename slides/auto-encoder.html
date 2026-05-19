@@ -569,8 +569,32 @@ li::before {
 </section>
 
 <!-- ========================= -->
-<!-- ENHANCED PRETTIER CODE SLIDE -->
+<!-- THE AUTOENCODER -->
 <!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Auto<span>Encoder</span></h2>
+        <div class="grid-2">
+            <div>
+                <p>An autoencoder is an unsupervised neural network designed to learn efficient data codings by forcing the input through a compressed bottleneck representation.</p>
+                <ul>
+                    <li><strong>Encoder:</strong> Maps input $\mathcal{X}$ to a lower-dimensional latent space $z$.</li>
+                    <li><strong>Bottleneck:</strong> Forces the model to extract the most salient features, discarding noise.</li>
+                    <li><strong>Decoder:</strong> Attempts to reconstruct the original input $\hat{\mathcal{X}}$ from the latent vector $z$.</li>
+                </ul>
+            </div>
+
+            <div class="image-box glass" style="display: flex; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box;">
+                <img loading="lazy" src="images/autoencoder.png" alt="Autoencoder diagram" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- PYTORCH -->
+<!-- ========================= -->
+
 <section>
     <div class="slide-content">
         <h2 class="slide-title">Modular <span>PyTorch Blueprint</span></h2>
@@ -605,6 +629,78 @@ li::before {
     </div>
 </section>
 
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Convolutional <span>Autoencoder</span></h2>
+
+        <!-- Adjusted grid: 40% text / 60% code -->
+        <div style="display: grid; grid-template-columns: 0.4fr 0.6fr; gap: 25px; align-items: start;">
+            <div style="font-size: 0.9em;">
+                <p>Convolutions preserve <strong>spatial topology</strong>, enabling the model to learn hierarchical visual features efficiently.</p>
+                <ul>
+                    <li><strong>Encoder:</strong> Strided layers compress imagery into $z$.</li>
+                    <li><strong>Decoder:</strong> <code>ConvTranspose2d</code> performs learnable upsampling.</li>
+                    <li><strong>Benefit:</strong> Parameter sharing reduces complexity vs. dense layers.</li>
+                </ul>
+            </div>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <div class="code-dots">
+                        <div class="code-dot r"></div>
+                        <div class="code-dot y"></div>
+                        <div class="code-dot g"></div>
+                    </div>
+                    <div class="code-lang">Python</div>
+                </div>
+                <pre class="code-body"><code><span class="k">self</span>.encoder = nn.<span class="f">Sequential</span>(
+    nn.<span class="f">Conv2d</span>(<span class="n">1</span>, <span class="n">16</span>, <span class="n">3</span>, stride=<span class="n">2</span>, padding=<span class="n">1</span>), nn.<span class="f">ReLU</span>(),
+    nn.<span class="f">Conv2d</span>(<span class="n">16</span>, <span class="n">32</span>, <span class="n">3</span>, stride=<span class="n">2</span>, padding=<span class="n">1</span>), nn.<span class="f">ReLU</span>(),
+    nn.<span class="f">Flatten</span>(), nn.<span class="f">Linear</span>(<span class="n">32</span> * <span class="n">7</span> * <span class="n">7</span>, latent_dim)
+)
+<span class="k">self</span>.decoder = nn.<span class="f">Sequential</span>(
+    nn.<span class="f">ConvTranspose2d</span>(<span class="n">32</span>, <span class="n">16</span>, <span class="n">3</span>, stride=<span class="n">2</span>, padding=<span class="n">1</span>, 
+                      output_padding=<span class="n">1</span>), nn.<span class="f">ReLU</span>(),
+    nn.<span class="f">ConvTranspose2d</span>(<span class="n">16</span>, <span class="n">1</span>, <span class="n">3</span>, stride=<span class="n">2</span>, padding=<span class="n">1</span>, 
+                      output_padding=<span class="n">1</span>), 
+    nn.<span class="f">Conv2d</span>(<span class="n">8</span>, <span class="n">1</span>, <span class="n">3</span>, padding=<span class="n">1</span>), nn.<span class="f">Sigmoid</span>()
+)</code></pre>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Convolutions & <span>Transposed Convolutions</span></h2>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; margin-top: 20px;">
+
+            <!-- Convolutional GIF -->
+            <div class="image-box glass" style="padding: 15px; display: flex; flex-direction: column; align-items: center; height: 350px;">
+                <h3 style="font-size: 18px; margin-bottom: 10px;">Convolution (Downsampling)</h3>
+                <img loading="lazy" src="images/padding_strides.gif" alt="Convolution mechanism" style="max-width: 100%; max-height: 80%; object-fit: contain; border-radius: 4px;" />
+                <p style="font-size: 14px; margin-top: 10px;">Extracts features while reducing spatial dimensions.</p>
+            </div>
+
+            <!-- Transposed GIF -->
+            <div class="image-box glass" style="padding: 15px; display: flex; flex-direction: column; align-items: center; height: 350px;">
+                <h3 style="font-size: 18px; margin-bottom: 10px;">Transposed Conv (Upsampling)</h3>
+                <img loading="lazy" src="images/padding_strides_transposed.gif" alt="Transposed convolution mechanism" style="max-width: 100%; max-height: 80%; object-fit: contain; border-radius: 4px;" />
+                <p style="font-size: 14px; margin-top: 10px;">Projects latent features back to original resolution.</p>
+            </div>
+        </div>
+
+        <!-- Reference Footer -->
+        <div style="margin-top: 20px; text-align: center; font-size: 12px; opacity: 0.6;">
+            Visualizations adapted from 
+            <a href="https://github.com/vdumoulin/conv_arithmetic" target="_blank" style="color: var(--purple);">
+                Vincent Dumoulin's Convolution Arithmetic
+            </a>
+        </div>
+    </div>
+</section>
 <!-- ========================= -->
 <!-- OPTIMIZATION LOSS -->
 <!-- ========================= -->
@@ -616,6 +712,67 @@ li::before {
             <div class="formula">
                 $$\mathcal{L}_{\text{AE}}(\theta, \psi) = \mathbb{E}_{x} \left[ \| x - g_\psi(f_\theta(x)) \|^2 \right]$$
             </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- AUTOENCODER AND PCA -->
+<!-- ========================= -->
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title"><span>Autoencoder</span> vs <span>PCA</span></h2>
+        <div class="grid-2">
+            <div>
+                <p> <strong>Principal Component Analysis</strong> and <strong>Autoencoders</strong> are powerful techniques used for dimensionality reduction. While PCA is a traditional, linear statistical method, Autoencoders are neural networks capable of capturing complex, non-linear patterns.</p>
+                <ul>
+                    <li><strong>Linear Bound:</strong> If the encoder and decoder are linear, the autoencoder spans the same subspace as <strong>PCA</strong>.</li>
+                    <li><strong>Non-Linearity:</strong> Using activation functions allows the model to map data onto far more powerful, complex manifolds.</li>
+                    <li><strong>Reconstruction:</strong> The decoder attempts to map the latent vector $z$ back to the original input $\hat{\mathcal{X}}$ by minimizing $\| x - \hat{x} \|^2$.</li>
+                </ul>
+            </div>
+
+            <div class="image-box glass" style="display: flex; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box;">
+                <img loading="lazy" src="images/swiss_roll.png" alt="Autoencoder diagram" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- APPLICATION -->
+<!-- ========================= -->
+
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Utility & <span>Practical Applications</span></h2>
+
+        <!-- Adjusted grid to give more weight to text while keeping image large -->
+        <div style="display: grid; grid-template-columns: 420px 1fr; gap: 30px; align-items: center; margin-top: 20px;">
+            
+            <!-- Sidebar: Enlarged cards for better readability -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="card glass" style="padding: 20px;">
+                    <h3 style="font-size: 22px; margin-bottom: 10px;">Anomaly Detection</h3>
+                    <p style="font-size: 17px !important; line-height: 1.5 !important;">High reconstruction error identifies outlier data points that deviate from the learned manifold.</p>
+                </div>
+                <div class="card glass" style="padding: 20px;">
+                    <h3 style="font-size: 22px; margin-bottom: 10px;">Dimensionality Reduction</h3>
+                    <p style="font-size: 17px !important; line-height: 1.5 !important;">Standard for reducing storage requirements while retaining high-fidelity visual features.</p>
+                </div>
+                <div class="card glass" style="padding: 20px;">
+                    <h3 style="font-size: 22px; margin-bottom: 10px;">Representation Learning</h3>
+                    <p style="font-size: 17px !important; line-height: 1.5 !important;">Learned latent vectors serve as dense inputs for downstream tasks like classification.</p>
+                </div>
+            </div>
+
+            <!-- Main Stage: Slightly reduced to balance the sidebar -->
+            <div class="image-box glass" style="padding: 20px; display: flex; justify-content: center; align-items: center; height: 380px;">
+                <img loading="lazy" src="images/latent_space.png" alt="Latent space" style="max-width: 90%; max-height: 90%; object-fit: contain;" />
+            </div>
+            
         </div>
     </div>
 </section>
@@ -710,6 +867,28 @@ li::before {
     </div>
 </section>
 
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Latent Space <span>Traversal</span></h2>
+        <div class="grid-2">
+            <div>
+                <p>Because the latent space is continuous, we can interpolate between two points, $z_1$ and $z_2$, to synthesize intermediate states.</p>
+                <ul>
+                    <li><strong>Pathfinding:</strong> Moving linearly in $z$-space creates semantic transitions in the output space.</li>
+                    <li><strong>Feature Blending:</strong> Subtle adjustments reveal how the model disentangles specific attributes.</li>
+                    <li><strong>Continuity:</strong> Validates that the decoder has learned a meaningful manifold.</li>
+                </ul>
+            </div>
+
+            <!-- Slightly enlarged image box to ensure single-line caption -->
+            <div class="image-box glass" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; height: 385px;">
+                <img loading="lazy" src="images/latent_space_traversal.png" alt="Latent space traversal visualization" style="max-width: 100%; max-height: 85%; object-fit: contain; border-radius: 8px;" />
+                <p style="font-size: 14px; margin-top: 15px; opacity: 0.9; white-space: nowrap;">Interpolating $z$ produces continuous output evolution.</p>
+            </div>
+        </div>
+    </div>
+</section>
 <!-- ========================= -->
 <!-- SUMMARY TAKEAWAYS -->
 <!-- ========================= -->
