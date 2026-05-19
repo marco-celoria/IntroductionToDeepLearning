@@ -661,7 +661,7 @@ li::before {
 <span class="k">self</span>.decoder = nn.<span class="f">Sequential</span>(
     nn.<span class="f">ConvTranspose2d</span>(<span class="n">32</span>, <span class="n">16</span>, <span class="n">3</span>, stride=<span class="n">2</span>, padding=<span class="n">1</span>, 
                       output_padding=<span class="n">1</span>), nn.<span class="f">ReLU</span>(),
-    nn.<span class="f">ConvTranspose2d</span>(<span class="n">16</span>, <span class="n">1</span>, <span class="n">3</span>, stride=<span class="n">2</span>, padding=<span class="n">1</span>, 
+    nn.<span class="f">ConvTranspose2d</span>(<span class="n">16</span>, <span class="n">8</span>, <span class="n">3</span>, stride=<span class="n">2</span>, padding=<span class="n">1</span>, 
                       output_padding=<span class="n">1</span>), 
     nn.<span class="f">Conv2d</span>(<span class="n">8</span>, <span class="n">1</span>, <span class="n">3</span>, padding=<span class="n">1</span>), nn.<span class="f">Sigmoid</span>()
 )</code></pre>
