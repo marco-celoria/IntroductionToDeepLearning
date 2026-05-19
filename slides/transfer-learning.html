@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Transfer Learning & Fine-Tuning Strategies</title>
+
+<!-- ========================= -->
+<!-- REVEAL.JS LOCAL -->
+<!-- ========================= -->
+<link rel="stylesheet" href="reveal/reset.css" />
+<link rel="stylesheet" href="reveal/reveal.css" />
+<link rel="stylesheet" href="reveal/black.css" />
+
+<!-- ========================= -->
+<!-- FONTS LOCAL -->
+<!-- ========================= -->
+<link rel="stylesheet" href="fonts/fonts.css" />
+
+<!-- ========================= -->
+<!-- KATEX LOCAL -->
+<!-- ========================= -->
+<link rel="stylesheet" href="katex/katex.min.css" />
+<script defer src="katex/katex.min.js"></script>
+<script defer src="katex/auto-render.min.js"></script>
+
+<style>
+/* =========================
+   ROOT & VARIABLES
+========================= */
+:root {
+    --bg: #030712;
+    --bg-soft: #111827;
+    --text: #f9fafb;
+    --muted: #9ca3af;
+    --cyan: #38bdf8;
+    --emerald: #34d399;
+    --amber: #fbbf24;
+    --purple: #c084fc;
+    --glass: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.07);
+    --radius: 16px;
+    
+    /* Code Editor Syntax Colors */
+    --code-bg: #0b0f17;
+    --code-keyword: #f472b6;
+    --code-fn: #38bdf8;
+    --code-num: #fbbf24;
+    --code-str: #34d399;
+    --code-comment: #6b7280;
+}
+
+body {
+    background: var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.08), transparent 45%),
+        radial-gradient(circle at 15% 85%, rgba(52, 211, 153, 0.08), transparent 45%);
+    filter: blur(60px);
+    z-index: -1;
+}
+
+/* =========================
+   REVEAL OVERRIDES
+========================= */
+.reveal {
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+}
+.reveal .slides {
+    text-align: left;
+}
+.reveal h1, .reveal h2, .reveal h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    text-transform: none;
+    letter-spacing: -0.5px;
+}
+
+.slide-content {
+    padding: 10px 30px;
+    box-sizing: border-box;
+    max-height: 620px; 
+    overflow: hidden;
+}
+
+/* =========================
+   TYPOGRAPHY
+========================= */
+.hero-title {
+    font-size: 72px !important;
+    line-height: 1.1;
+    font-weight: 800;
+    margin-bottom: 20px;
+}
+.hero-title span {
+    background: linear-gradient(135deg, var(--cyan), var(--emerald));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.hero-subtitle {
+    font-size: 24px;
+    color: var(--muted);
+    font-weight: 300;
+}
+.slide-title {
+    font-size: 38px !important;
+    margin-bottom: 25px !important;
+    border-left: 5px solid var(--emerald);
+    padding-left: 15px;
+    font-weight: 700;
+}
+.slide-title span {
+    color: var(--emerald);
+}
+p {
+    font-size: 19px !important;
+    line-height: 1.45 !important;
+    color: #d1d5db;
+    margin-bottom: 14px !important;
+}
+
+ul {
+    list-style: none !important;
+    margin: 15px 0 0 0 !important;
+    padding-left: 0 !important;
+}
+li {
+    position: relative;
+    padding-left: 25px;
+    margin-bottom: 12px;
+    font-size: 19px;
+    line-height: 1.4;
+    color: #e5e7eb;
+}
+li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 12px;
+    height: 2px;
+    background: var(--cyan);
+    border-radius: 1px;
+}
+
+/* =========================
+   LAYOUT MATRIX
+========================= */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: center;
+}
+.grid-2-large-right {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 35px;
+    align-items: center;
+}
+.cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 15px;
+}
+.cards-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    margin-top: 15px;
+}
+.centered {
+    text-align: center;
+}
+
+/* =========================
+   UI CONTAINERS & GLASS
+========================= */
+.glass {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+}
+.card {
+    padding: 24px;
+}
+.card h3 {
+    font-size: 22px;
+    margin-bottom: 10px;
+    font-weight: 700;
+    color: var(--cyan);
+}
+.card p {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+    color: #cbd5e1;
+}
+
+.image-box {
+    overflow: hidden;
+    border-radius: var(--radius);
+    height: 320px;
+}
+.image-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* =========================
+   FORMULAS
+========================= */
+.formula-box {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 15px 30px;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.formula {
+    font-size: 32px;
+    color: var(--cyan);
+}
+
+/* =========================
+   PREMIUM CUSTOM CODE BLOCK
+========================= */
+.code-container {
+    background: var(--code-bg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    overflow: hidden;
+    width: 100%;
+    margin-top: 5px;
+}
+.code-header {
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.code-dots {
+    display: flex;
+    gap: 6px;
+}
+.code-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+.code-dot.r { background: #ff5f56; }
+.code-dot.y { background: #ffbd2e; }
+.code-dot.g { background: #27c93f; }
+.code-lang {
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.code-body {
+    padding: 16px 20px;
+    margin: 0;
+    overflow-x: auto;
+}
+.code-body code {
+    font-family: 'Fira Code', monospace !important;
+    font-size: 13.5px !important;
+    line-height: 1.45 !important;
+    color: #e2e8f0;
+    white-space: pre;
+    display: block;
+}
+
+/* Custom Highlight Tokens */
+.k { color: var(--code-keyword); font-weight: 600; }
+.f { color: var(--code-fn); }
+.n { color: var(--code-num); }
+.s { color: var(--code-str); }
+.c { color: var(--code-comment); font-style: italic; }
+</style>
+</head>
+
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ========================= -->
+<!-- TITLE SLIDE -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h1 class="hero-title">
+            Transfer Learning &<br>
+            <span>Fine-Tuning Strategies</span>
+        </h1>
+        <p class="hero-subtitle">
+            Leveraging broad inductive biases to optimize specialized downstream tasks.
+        </p>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- THE INTUITION -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">The Core <span>Paradigm Shift</span></h2>
+        <div class="grid-2">
+            <div>
+                <p>Training models from scratch demands massive compute resources and vast datasets. Transfer learning bypasses this by treating pre-trained parameter topologies as foundational intelligence assets.</p>
+                <ul>
+                    <li><strong>Feature Inheritance:</strong> Retains lower-level representations (edges, grammar patterns).</li>
+                    <li><strong>Sample Efficiency:</strong> Achieves convergence with minor downstream data pipelines.</li>
+                </ul>
+            </div>
+            <div class="image-box glass" style="display: flex; flex-direction: column; gap: 12px; padding: 12px; box-sizing: border-box; justify-content: center; align-items: center; height: auto; max-height: 500px;">
+                <img loading="lazy" src="images/numbers.png" alt="Dataset numbers pipeline" style="width: 100%; height: auto; max-height: 48%; object-fit: contain;" />
+                <img loading="lazy" src="images/letters.png" alt="Dataset letters pipeline" style="width: 100%; height: auto; max-height: 48%; object-fit: contain;" />
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- MATHEMATICAL MATRIX -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Formal <span>Mathematical Boundary</span></h2>
+        <div class="grid-2-large-right">
+            <div>
+                <p>We declare a Domain $\mathcal{D} = \{\mathcal{X}, P(X)\}$ and a Task $\mathcal{T} = \{\mathcal{Y}, f(x)\}$. Transfer learning moves predictive systems from a source environment to target variations:</p>
+                <p>Where either domain dimensions or label boundaries diverge:</p>
+                <ul>
+                    <li>$\mathcal{X}_S \neq \mathcal{X}_T$ (Feature Space Shift)</li>
+                    <li>$\mathcal{Y}_S \neq \mathcal{Y}_T$ (Label Set Divergence)</li>
+                </ul>
+            </div>
+
+            <div class="glass" style="padding: 10px; display: flex; align-items: center; justify-content: center; height: 330px; overflow: hidden;">
+                <svg width="100%" height="100%" viewBox="0 0 560 330" style="overflow: visible;">
+                    <defs>
+                        <!-- Headed Arrow Marker Definition -->
+                        <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                            <path d="M 0 1 L 10 5 L 0 9 z" fill="#fbbf24"/>
+                        </marker>
+                        <linearGradient id="sourceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="rgba(56, 189, 248, 0.2)"/>
+                            <stop offset="100%" stop-color="rgba(56, 189, 248, 0.03)"/>
+                        </linearGradient>
+                        <linearGradient id="targetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="rgba(52, 211, 153, 0.2)"/>
+                            <stop offset="100%" stop-color="rgba(52, 211, 153, 0.03)"/>
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- Source Space Box -->
+                    <rect x="30" y="50" width="200" height="220" rx="12" fill="url(#sourceGrad)" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 4"/>
+                    <text x="130" y="35" fill="#38bdf8" text-anchor="middle" font-size="14" font-weight="700">SOURCE DOMAIN</text>
+                    <circle cx="130" cy="140" r="45" fill="rgba(56, 189, 248, 0.1)" stroke="#38bdf8" stroke-width="2"/>
+                    <text x="130" y="145" fill="#f9fafb" text-anchor="middle" font-size="12">Pre-trained Knowledge</text>
+
+                    <!-- Knowledge Transfer Arrow (Fixed Head) -->
+                    <path d="M 240 140 L 305 140" fill="none" stroke="#fbbf24" stroke-width="4" marker-end="url(#arrow)"/>
+                    <text x="275" y="115" fill="#fbbf24" text-anchor="middle" font-size="12" font-weight="700">TRANSFER</text>
+
+                    <!-- Target Space Box -->
+                    <rect x="320" y="50" width="200" height="220" rx="12" fill="url(#targetGrad)" stroke="#34d399" stroke-width="1.5"/>
+                    <text x="420" y="35" fill="#34d399" text-anchor="middle" font-size="14" font-weight="700">TARGET TASK</text>
+                    <circle cx="420" cy="160" r="35" fill="rgba(52, 211, 153, 0.1)" stroke="#34d399" stroke-width="2"/>
+                    <text x="420" y="165" fill="#f9fafb" text-anchor="middle" font-size="12">Fine-Tuned Model</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- ANATOMY OF PRE-TRAINING -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Feature Hierarchy <span>Decomposition</span></h2>
+        <div class="grid-2">
+            <div>
+                <p>Deep architectures stratify representations across successive processing blocks:</p>
+                <ul>
+                    <li><strong>Early Layers:</strong> Highly generalizable features (Gabor filters, basic textures, positional structural syntax).</li>
+                    <li><strong>Deep Layers:</strong> Hyper-specific contextual metrics linked closely to the original source objective functions.</li>
+                </ul>
+            </div>
+
+            <div class="glass" style="padding: 10px; display: flex; align-items: center; justify-content: center; height: 320px;">
+                <svg width="100%" height="100%" viewBox="0 0 600 340" style="overflow: visible;">
+                    <!-- Base Layers -->
+                    <rect x="50" y="60" width="120" height="180" rx="6" fill="rgba(56, 189, 248, 0.08)" stroke="#38bdf8" stroke-width="2"/>
+                    <text x="110" y="270" fill="#38bdf8" text-anchor="middle" font-size="12" font-weight="700">EARLY LAYERS</text>
+                    <text x="110" y="150" fill="#9ca3af" text-anchor="middle" font-size="11">General (Edges)</text>
+
+                    <!-- Mid Layers -->
+                    <rect x="220" y="90" width="120" height="120" rx="6" fill="rgba(56, 189, 248, 0.04)" stroke="rgba(56, 189, 248, 0.5)" stroke-width="2"/>
+                    <text x="280" y="240" fill="rgba(56, 189, 248, 0.8)" text-anchor="middle" font-size="12" font-weight="700">MID LAYERS</text>
+                    <text x="280" y="155" fill="#9ca3af" text-anchor="middle" font-size="11">Shapes / Phrases</text>
+
+                    <!-- Deep Head -->
+                    <rect x="390" y="120" width="120" height="60" rx="6" fill="rgba(244, 114, 182, 0.1)" stroke="#f472b6" stroke-width="2"/>
+                    <text x="450" y="210" fill="#f472b6" text-anchor="middle" font-size="12" font-weight="700">CLASSIFICATION HEAD</text>
+                    <text x="450" y="155" fill="#9ca3af" text-anchor="middle" font-size="11">Task Specific</text>
+                    
+                    <path d="M 170 150 L 220 150" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="3 3"/>
+                    <path d="M 340 150 L 390 150" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="3 3"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- THE HEAD STRATEGIES -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Freezing vs. <span>Full Fine-Tuning</span></h2>
+        <p>Choosing an alignment method depends heavily on target dataset capacity and domain shifts:</p>
+        <div class="cards">
+            <div class="card glass" style="border-top: 4px solid var(--cyan);">
+                <h3>Feature Extraction</h3>
+                <p>Base parameters stay frozen $\nabla_\theta=0$ only the new linear classification head updates parameters during optimization passes.</p>
+            </div>
+            <div class="card glass" style="border-top: 4px solid var(--emerald);">
+                <h3>Partial Fine-Tune</h3>
+                <p>Keeps early feature paths locked while opening deeper contextual layers near the model output to downstream updates.</p>
+            </div>
+            <div class="card glass" style="border-top: 4px solid var(--amber);">
+                <h3>Full Fine-Tune</h3>
+                <p>Exposes all parameters across the network using micro-learning rates $\eta_{\text{ft}} \ll \eta_{\text{base}}$ to preserve structure.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- THE MODERN FRONTIER: PEFT -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">The Modern Frontier: <span>PEFT & LoRA</span></h2>
+        <p>When parameter scale scales past billions, Full Fine-Tuning becomes computationally prohibitive.</p>
+        <div class="cards-2">
+            <div class="card glass" style="border-top: 4px solid var(--purple);">
+                <h3>Parameter-Efficient Fine-Tuning</h3>
+                <p>Keeps original weights 100% frozen. Instead, injects small, manageable trainable parameter paths or prompt tokens, reducing memory overhead up to 90%.</p>
+            </div>
+            <div class="card glass" style="border-top: 4px solid var(--purple); padding: 12px 16px;">
+                <h3 style="font-size: 18px; margin-bottom: 4px;">Low-Rank Adaptation (LoRA)</h3>
+                <p style="font-size: 14px !important; line-height: 1.3 !important; margin-bottom: 6px !important;">
+                    Decomposes weight updates $\Delta W$ into low-rank matrices $A$ and $B$:
+                </p>
+                <div class="formula-box" style="display:block; text-align:center; margin:4px 0 0 0; padding:6px; font-size: 18px !important;">
+                    $$W_{\text{updated}} = W_{\text{frozen}} + (A \times B)$$
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- MODULAR PYTORCH BLUEPRINT -->
+<!-- ========================= -->
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Local Weight <span>Initialization Code</span></h2>
+        
+        <div class="code-container">
+            <div class="code-header">
+                <div class="code-dots">
+                    <div class="code-dot r"></div>
+                    <div class="code-dot y"></div>
+                    <div class="code-dot g"></div>
+                </div>
+                <div class="code-lang">Python</div>
+            </div>
+            <pre class="code-body"><code><span class="c"># 1. Initialize the model architecture with no pre-trained weights</span>
+model = <span class="f">resnet18</span>(weights=None)
+
+<span class="c"># 2. Define the exact path where you saved the .pth file</span>
+weights_path = <span class="s">"/path/to/resnet18-f37072fd.pth"</span>
+
+<span class="c"># 3. Load the state dictionary manually</span>
+state_dict = torch.<span class="f">load</span>(weights_path, map_location=<span class="s">"cpu"</span>)
+model.<span class="f">load_state_dict</span>(state_dict)
+
+<span class="c"># Replace final classification layer</span>
+model.fc = nn.<span class="f">Linear</span>(model.fc.in_features, <span class="n">num_classes</span>)</code></pre>
+        </div>
+    </div>      
+</section>
+
+<!-- ========================= -->
+<!-- THE CHALLENGE -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">The Initial <span>Gradient Shock</span></h2>
+        <div class="grid-2">
+            <div>
+                <p>When extending a pre-trained backbone with a randomly initialized classification head, parameter tracking encounters an extreme optimization mismatch.</p>
+                <ul>
+                    <li><strong>The Threat:</strong> Random head weights output massive, chaotic loss gradients ($\nabla_{\mathcal{L}}$) during early backpropagation loops.</li>
+                    <li><strong>Backbone Contamination:</strong> Passing raw gradients into un-isolated deep feature extractors shatters the delicate, pre-trained parameter topologies.</li>
+                </ul>
+            </div>
+            
+            <!-- Strategy Options Container -->
+            <div class="glass card" style="display: flex; flex-direction: column; gap: 16px; border-left: 4px solid var(--amber);">
+                <h3 style="color: var(--amber); font-size: 20px; margin-bottom: 5px;">Mitigation Strategies</h3>
+                
+                <div style="background: rgba(255,255,255,0.02); padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <h4 style="font-size: 16px; font-weight: 700; color: var(--muted); margin-bottom: 4px;">1) The Fine-Tuning Loss Objective</h4>
+                    <p style="font-size: 14px !important; line-height: 1.4 !important; margin: 0 !important;">
+                        Applies mathematical constraints or weight penalties to physically restrict parameter deviation from the base state.
+                    </p>
+                </div>
+
+                <div style="background: rgba(52, 211, 153, 0.05); padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(52, 211, 153, 0.15);">
+                    <h4 style="font-size: 16px; font-weight: 700; color: var(--emerald); margin-bottom: 4px;">2) Two-Stage Fine-Tuning</h4>
+                    <p style="font-size: 14px !important; line-height: 1.4 !important; margin: 0 !important;">
+                        Enforces temporal isolation. Warms up the random head under strict backbone freeze constraints before opening global parameter paths.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- LOSS & REGULARIZATION -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content centered">
+        <h2 class="slide-title" style="border:none; padding:0;">Option 1: <span>Mitigating Catastrophic Forgetting</span></h2>
+        <p style="max-width: 750px; margin: auto;">Unchecked optimization on narrow target sets can overwrite a model's foundational parameters, destroying its general capabilities. We prevent this by minimizing weight deviations via regularization:</p>
+        <div class="formula-box">
+            <div class="formula">
+                $$\mathcal{L}(\theta) = \mathcal{L}_{\text{task}}(\theta) + \frac{\lambda}{2} \| \theta - \theta_{\text{pre}} \|^2$$
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<!-- ========================= -->
+<!-- STAGE 1 DESIGN -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Option 2: <span>Stage 1 | Head Warm-Up</span></h2>
+        <div class="grid-2-large-right">
+            <div>
+                <p>During the opening training epochs, the pre-trained feature extractor parameters are strictly locked ($\nabla_{\theta_{\text{base}}} = 0$).</p>
+                <ul>
+                    <li><strong>Goal:</strong> Force the new classification layer to align with the pre-existing latent distribution.</li>
+                    <li><strong>Outcome:</strong> The head achieves primitive convergence while structural features remain entirely uncorrupted.</li>
+                </ul>
+            </div>
+
+            <div class="glass" style="padding: 10px; display: flex; align-items: center; justify-content: center; height: 330px; overflow: hidden;">
+                <svg width="100%" height="100%" viewBox="0 0 560 330" style="overflow: visible;">
+                    <defs>
+                        <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                            <path d="M 0 1 L 10 5 L 0 9 z" fill="#6b7280"/>
+                        </marker>
+                        <marker id="arrow-active" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                            <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"/>
+                        </marker>
+                    </defs>
+                    
+                    <!-- Backbone Container (Frozen) -->
+                    <rect x="20" y="60" width="230" height="200" rx="12" fill="rgba(255,255,255,0.01)" stroke="#6b7280" stroke-width="2" stroke-dasharray="6 6"/>
+                    <text x="135" y="45" fill="#9ca3af" text-anchor="middle" font-size="13" font-weight="700">PRE-TRAINED BACKBONE (FROZEN)</text>
+                    <text x="135" y="165" fill="#6b7280" text-anchor="middle" font-size="16" font-weight="600">$\nabla_{\theta} = 0$</text>
+
+                    <!-- Gradient Blocked Vector Arrow -->
+                    <path d="M 330 160 L 270 160" fill="none" stroke="#ef4444" stroke-width="3" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+                    <text x="300" y="140" fill="#ef4444" text-anchor="middle" font-size="11" font-weight="700">GRADIENT BLOCKED</text>
+
+                    <!-- Target Head (Active) -->
+                    <rect x="350" y="60" width="180" height="200" rx="12" fill="rgba(56, 189, 248, 0.05)" stroke="#38bdf8" stroke-width="2"/>
+                    <text x="440" y="45" fill="#38bdf8" text-anchor="middle" font-size="13" font-weight="700">NEW HEAD (TRAINING)</text>
+                    <text x="440" y="165" fill="#38bdf8" text-anchor="middle" font-size="16" font-weight="600">$\nabla_{\theta} = \text{Active}$</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- STAGE 2 DESIGN -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Option 2: <span>Stage 2 | Full Model Co-Adaptation</span></h2>
+        <div class="grid-2-large-right">
+            <div>
+                <p>Once the loss curve stabilizes, all layers are unfrozen to allow joint feature optimization.</p>
+                <ul>
+                    <li><strong>Gentle Gradients:</strong> Because the head is already stable, backpropagated forces act as precision calibrations rather than structural damage.</li>
+                    <li><strong>Global Alignment:</strong> The backbone shifts slightly to fit specialized target domain contexts.</li>
+                </ul>
+            </div>
+
+            <div class="glass" style="padding: 10px; display: flex; align-items: center; justify-content: center; height: 330px; overflow: hidden;">
+                <svg width="100%" height="100%" viewBox="0 0 560 330" style="overflow: visible;">
+                    <!-- Backbone Container (Unfrozen) -->
+                    <rect x="20" y="60" width="230" height="200" rx="12" fill="rgba(52, 211, 153, 0.05)" stroke="#34d399" stroke-width="2"/>
+                    <text x="135" y="45" fill="#34d399" text-anchor="middle" font-size="13" font-weight="700">BACKBONE (UNFROZEN)</text>
+                    <text x="135" y="165" fill="#34d399" text-anchor="middle" font-size="14" font-weight="600">Micro Fine-Tuning Updates</text>
+
+                    <!-- Safe Backward Pass Arrow -->
+                    <path d="M 340 160 L 265 160" fill="none" stroke="#34d399" stroke-width="3" marker-end="url(#arrow-active)"/>
+                    <text x="302" y="140" fill="#34d399" text-anchor="middle" font-size="11" font-weight="700">SAFE GRADIENTS</text>
+
+                    <!-- Target Head (Active) -->
+                    <rect x="350" y="60" width="180" height="200" rx="12" fill="rgba(56, 189, 248, 0.05)" stroke="#38bdf8" stroke-width="2"/>
+                    <text x="440" y="45" fill="#38bdf8" text-anchor="middle" font-size="13" font-weight="700">HEAD (STABILIZED)</text>
+                    <text x="440" y="165" fill="#38bdf8" text-anchor="middle" font-size="14" font-weight="600">Standard Updates</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- IMPLICIT REGULARIZATION THEORY -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content centered">
+        <h2 class="slide-title" style="border:none; padding:0;">The Power of <span>Implicit Regularization</span></h2>
+        <p style="max-width: 820px; margin: auto;">You do not need complex explicit cost functions to protect representations. Staged training enforces structural integrity through <strong>Temporal Isolation</strong>:</p>
+        
+        <div class="formula-box">
+            <div class="formula">
+                $$\text{If } t < T_{\text{unfreeze}}, \quad \frac{\partial \mathcal{L}}{\partial \theta_{\text{base}}} = 0 \implies \theta_{\text{base}}^{(t)} \equiv \theta_{\text{pre}}$$
+            </div>
+        </div>
+        <p style="font-size:16px !important; color:var(--muted); max-width:700px; margin:15px auto 0 auto !important;">
+            By limiting early exposure, the baseline network never encounters chaotic out-of-distribution gradients, achieving the same objective as physical weight-deviation penalties.
+        </p>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- EXECUTION BLUEPRINT -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">PyTorch <span>Staged Execution Protocol</span></h2>
+        
+        <div class="code-container">
+            <div class="code-header">
+                <div class="code-dots">
+                    <div class="code-dot r"></div>
+                    <div class="code-dot y"></div>
+                    <div class="code-dot g"></div>
+                </div>
+                <div class="code-lang">Python</div>
+            </div>
+            <pre class="code-body"><code><span class="c"># === STAGE 1: Warm-up Head Only (e.g., Epochs 1-5) ===</span>
+model = models.<span class="f">resnet18</span>(weights=models.ResNet18_Weights.DEFAULT)
+model.fc = nn.<span class="f">Linear</span>(model.fc.in_features, <span class="n">num_classes</span>)
+
+<span class="k">for</span> param <span class="k">in</span> model.<span class="f">parameters</span>():
+    param.requires_grad = <span class="k">False</span> <span class="c"># Lock backbone</span>
+<span class="k">for</span> param <span class="k">in</span> model.fc.<span class="f">parameters</span>():
+    param.requires_grad = <span class="k">True</span>
+
+optimizer = optim.<span class="f">Adam</span>(model.fc.<span class="f">parameters</span>(), lr=<span class="n">1e-3</span>)
+
+<span class="c"># === STAGE 2: Global Unfreeze with Differential Learning Rates ===</span>
+<span class="k">for</span> param <span class="k">in</span> model.layer4.<span class="f">parameters</span>():
+    param.requires_grad = <span class="k">True</span>
+<span class="k">for</span> param <span class="k">in</span> model.fc.<span class="f">parameters</span>():
+    param.requires_grad = <span class="k">True</span>
+
+optimizer = optim.<span class="f">Adam</span>([
+    {<span class="s">'params'</span>: model.layer4.<span class="f">parameters</span>(), <span class="s">'lr'</span>: <span class="n">1e-5</span>}, <span class="c"># Gentle Backbone Tuning</span>
+    {<span class="s">'params'</span>: model.fc.<span class="f">parameters</span>(), <span class="s">'lr'</span>: <span class="n">1e-4</span>}     <span class="c"># Refined Head Tuning</span>
+])</code></pre>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- STRATEGY BLUEPRINT CARD -->
+<!-- ========================= -->
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Operational <span>Best Practices</span></h2>
+        
+        <div class="cards-2" style="grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 30px;">
+            
+            <div class="card glass" style="border-top: 6px solid var(--cyan); padding: 40px;">
+                <h3 style="font-size: 28px; margin-bottom: 20px;">Differential Learning Rates</h3>
+                <p style="font-size: 22px !important; line-height: 1.6 !important;">
+                    When entering Stage 2, always scale the backbone learning rate down significantly 
+                    ($\eta_{\text{base}} \approx \frac{1}{100} \eta_{\text{head}}$). 
+                    This prevents high-variance gradients from overwriting the pre-trained features.
+                </p>
+            </div>
+            
+            <div class="card glass" style="border-top: 6px solid var(--amber); padding: 40px;">
+                <h3 style="font-size: 28px; margin-bottom: 20px;">Early Stopping Strategy</h3>
+                <p style="font-size: 22px !important; line-height: 1.6 !important;">
+                    Since fine-tuning often converges in very few epochs, implement <strong>Early Stopping</strong>. 
+                    Monitor validation loss and halt training the moment performance plateaus to prevent the model from overfitting to your target dataset.
+                </p>
+            </div>
+            
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- STRATEGY MATRIX DIAGRAM -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">The Strategic <span>Decision Matrix</span></h2>
+        <div class="grid-2-large-right">
+            <div>
+                <p>Downstream structural deployment paths map cleanly along two primary dimensional axes:</p>
+                <ul>
+                    <li><strong>Data Volume:</strong> Count of training instances available.</li>
+                    <li><strong>Domain Distance:</strong> Dimensional shift variance between environments.</li>
+                </ul>
+            </div>
+            
+            <div class="glass" style="padding: 15px; height:320px; box-sizing:border-box;">
+                <table style="width:100%; height:100%; border-collapse:collapse; font-size:14px; color:#cbd5e1;">
+                    <thead>
+                        <tr style="border-bottom:2px solid rgba(255,255,255,0.15);">
+                            <th style="padding:12px 8px; color:var(--cyan); font-weight:800;">Dataset vs Domain</th>
+                            <th style="padding:12px 8px; font-weight:700;">Similar Domain</th>
+                            <th style="padding:12px 8px; font-weight:700;">Different Domain</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+                            <td style="padding:14px 8px; font-weight:700; color:var(--emerald);">Small Target Data</td>
+                            <td style="padding:14px 8px; color:var(--cyan);">Linear Classifier Head<br><small style="color:var(--muted);">(Freeze Backbone)</small></td>
+                            <td style="padding:14px 8px; color:var(--amber);">Expose Deep Layers Only<br><small style="color:var(--muted);">(High Overfit Risk)</small></td>
+                        </tr>
+                        <tr>
+                            <td style="padding:14px 8px; font-weight:700; color:var(--emerald);">Large Target Data</td>
+                            <td style="padding:14px 8px; color:var(--emerald);">Tune Top Blocks<br><small style="color:var(--muted);">(Low Learning Rate)</small></td>
+                            <td style="padding:14px 8px; color:var(--purple);">Full Backbone Fine-Tune<br><small style="color:var(--muted);">(Or PEFT/LoRA Layers)</small></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- SUMMARY TAKEAWAYS -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Core Architectural <span>Takeaways</span></h2>
+        <div class="cards">
+            <div class="card glass">
+                <h3>Efficiency</h3>
+                <p>Inherits general lower representations to minimize pipeline compute costs and dataset size mandates.</p>
+            </div>
+            <div class="card glass">
+                <h3>Stability</h3>
+                <p>Leverages differential learning rates and weight parameter constraints to eliminate catastrophic forgetting hazards.</p>
+            </div>
+            <div class="card glass">
+                <h3>Adaptability</h3>
+                <p>Deploys PEFT methodologies to manipulate massive models without destabilizing foundational latent spaces.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- CLOSING SLIDE -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content centered" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+        <h1 class="hero-title">Questions?</h1>
+        <p class="hero-subtitle" style="margin:auto;">Thank you for exploring optimization transfer boundaries.</p>
+        <div class="image-box glass" style="width: 400px; height: 300px; padding: 16px; display: flex; justify-content: center; align-items: center;">
+            <img loading="lazy" src="images/martino.png" alt="Fluid abstraction" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;" />
+        </div>
+    </div>
+</section>
+
+
+
+</div>
+</div>
+
+<!-- ========================= -->
+<!-- REVEAL JS ENGINE -->
+<!-- ========================= -->
+<script src="reveal/reveal.js"></script>
+<script>
+window.addEventListener("load", () => {
+    Reveal.initialize({
+        hash: true,
+        controls: true,
+        progress: true,
+        center: true,
+        width: 1100,
+        height: 700,
+        margin: 0.05,
+        minScale: 0.2,
+        maxScale: 1.5,
+        transition: "slide"
+    });
+    if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false }
+            ],
+            throwOnError: false
+        });
+    }
+});
+</script>
+</body>
+</html>
+

@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Autoencoders & Representation Learning</title>
+
+<!-- ========================= -->
+<!-- REVEAL.JS LOCAL -->
+<!-- ========================= -->
+<link rel="stylesheet" href="reveal/reset.css" />
+<link rel="stylesheet" href="reveal/reveal.css" />
+<link rel="stylesheet" href="reveal/black.css" />
+
+<!-- ========================= -->
+<!-- FONTS LOCAL -->
+<!-- ========================= -->
+<link rel="stylesheet" href="fonts/fonts.css" />
+
+<!-- ========================= -->
+<!-- KATEX LOCAL -->
+<!-- ========================= -->
+<link rel="stylesheet" href="katex/katex.min.css" />
+<script defer src="katex/katex.min.js"></script>
+<script defer src="katex/auto-render.min.js"></script>
+
+<style>
+/* =========================
+   ROOT & VARIABLES
+========================= */
+:root {
+    --bg: #020617;
+    --bg-soft: #0f172a;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --cyan: #00f5ff;
+    --purple: #a855f7;
+    --blue: #3b82f6;
+    --glass: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --radius: 16px;
+    
+    /* Code Editor Syntax Colors */
+    --code-bg: #0b0f19;
+    --code-keyword: #ff7b72;
+    --code-fn: #d2a6ff;
+    --code-num: #79c0ff;
+    --code-str: #a5d6ff;
+    --code-comment: #8b949e;
+}
+
+body {
+    background: var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(0, 245, 255, 0.12), transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.12), transparent 45%);
+    filter: blur(60px);
+    z-index: -1;
+}
+
+/* =========================
+   REVEAL OVERRIDES
+========================= */
+.reveal {
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+}
+.reveal .slides {
+    text-align: left;
+}
+.reveal h1, .reveal h2, .reveal h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    text-transform: none;
+    letter-spacing: -0.5px;
+}
+
+.slide-content {
+    padding: 10px 30px;
+    box-sizing: border-box;
+    max-height: 600px; 
+    overflow: hidden;
+}
+
+/* =========================
+   TYPOGRAPHY
+========================= */
+.hero-title {
+    font-size: 76px !important;
+    line-height: 1.1;
+    font-weight: 800;
+    margin-bottom: 20px;
+}
+.hero-title span {
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.hero-subtitle {
+    font-size: 24px;
+    color: var(--muted);
+    font-weight: 300;
+}
+.slide-title {
+    font-size: 38px !important;
+    margin-bottom: 25px !important;
+    border-left: 5px solid var(--cyan);
+    padding-left: 15px;
+    font-weight: 700;
+}
+.slide-title span {
+    color: var(--cyan);
+}
+p {
+    font-size: 19px !important;
+    line-height: 1.4 !important;
+    color: #cbd5e1;
+    margin-bottom: 12px !important;
+}
+
+ul {
+    list-style: none !important;
+    margin: 15px 0 0 0 !important;
+    padding-left: 0 !important;
+}
+li {
+    position: relative;
+    padding-left: 25px;
+    margin-bottom: 12px;
+    font-size: 19px;
+    line-height: 1.4;
+    color: #e2e8f0;
+}
+li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 12px;
+    height: 2px;
+    background: var(--cyan);
+    border-radius: 1px;
+}
+
+/* =========================
+   LAYOUT MATRIX
+========================= */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: center;
+}
+.grid-2-large-right {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 35px;
+    align-items: center;
+}
+.cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 15px;
+}
+.centered {
+    text-align: center;
+}
+
+/* =========================
+   UI CONTAINERS & GLASS
+========================= */
+.glass {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+}
+.card {
+    padding: 20px;
+}
+.card h3 {
+    font-size: 22px;
+    margin-bottom: 8px;
+    font-weight: 700;
+    color: var(--cyan);
+}
+.card p {
+    font-size: 16px !important;
+    line-height: 1.3 !important;
+}
+
+.image-box {
+    overflow: hidden;
+    border-radius: var(--radius);
+    height: 320px;
+}
+.image-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.latent {
+    width: 100px;
+    height: 100px;
+    margin: 20px auto;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ffffff, var(--cyan) 25%, var(--blue) 80%);
+    box-shadow: 0 0 30px rgba(0, 245, 255, 0.3);
+}
+
+/* =========================
+   FORMULAS
+========================= */
+.formula-box {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 15px 30px;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.formula {
+    font-size: 32px;
+    color: var(--cyan);
+}
+.formula-box.compact {
+    padding: 6px 12px;
+    margin-top: 5px;
+    border-radius: 8px;
+}
+.formula-box.compact .formula {
+    font-size: 16px;
+}
+
+/* =========================
+   PREMIUM CUSTOM CODE BLOCK
+========================= */
+.code-container {
+    background: var(--code-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    overflow: hidden;
+    width: 100%;
+    margin-top: 5px;
+}
+.code-header {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.code-dots {
+    display: flex;
+    gap: 6px;
+}
+.code-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+.code-dot.r { background: #ff5f56; }
+.code-dot.y { background: #ffbd2e; }
+.code-dot.g { background: #27c93f; }
+.code-lang {
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.code-body {
+    padding: 16px 20px;
+    margin: 0;
+    overflow-x: auto;
+}
+.code-body code {
+    font-family: 'Fira Code', monospace !important;
+    font-size: 15px !important;
+    line-height: 1.45 !important;
+    color: #c9d1d9;
+    white-space: pre;
+    display: block;
+}
+
+/* Custom Highlight Tokens */
+.k { color: var(--code-keyword); font-weight: 600; }
+.f { color: var(--code-fn); }
+.n { color: var(--code-num); }
+.s { color: var(--code-str); }
+.c { color: var(--code-comment); font-style: italic; }
+
+/* Quote Layout */
+.quote {
+    max-width: 800px;
+    margin: 30px auto;
+    font-size: 38px;
+    line-height: 1.3;
+    font-weight: 400;
+}
+.quote span {
+    background: linear-gradient(to right, var(--cyan), var(--blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+</style>
+</head>
+
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ========================= -->
+<!-- TITLE SLIDE -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h1 class="hero-title">
+            Autoencoders &<br>
+            <span>Representation Learning</span>
+        </h1>
+        <p class="hero-subtitle">
+            Unveiling structural latent variables through targeted dimensional bottlenecks.
+        </p>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- WHY REPRESENTATION LEARNING -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">The Essence of <span>Representation</span></h2>
+        <div class="grid-2">
+            <div>
+                <p>Raw high-dimensional inputs are highly redundant and noisy. Representation learning simplifies this space by extracting the core factors of variation.</p>
+                <ul>
+                    <li><strong>Feature Condensation:</strong> Distills complex signals into compact structural vectors.</li>
+                    <li><strong>Signal Isolation:</strong> Discriminates structural data geometries from background artifacts.</li>
+                </ul>
+            </div>
+<div class="image-box glass" style="display: flex; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box;">
+    <img loading="lazy" src="images/image_space.png" alt="Geometric representation" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+</div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- MANIFOLD LEARNING -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">The <span>Manifold Hypothesis</span></h2>
+        <div class="grid-2-large-right">
+            <div>
+                <p>Natural entities inhabit minuscule coordinates within vast mathematical spaces. For instance, a $256\times256$ RGB image occupies:</p>
+                
+                <div class="formula-box compact">
+                    <div class="formula">$$256 \times 256 \times 3 = 196,608 \text{ dim}$$</div>
+                </div>
+                
+                <p style="margin-top:15px;">Manifold mechanisms exploit this by mapping only valid physical data topologies.</p>
+            </div>
+
+            <div class="glass" style="padding: 10px; display: flex; align-items: center; justify-content: center; height: 330px; overflow: hidden;">
+                <svg width="100%" height="100%" viewBox="20 20 560 330" style="overflow: visible;">
+                    <defs>
+                        <linearGradient id="planeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="rgba(15, 23, 42, 0.98)"/>
+                            <stop offset="100%" stop-color="rgba(2, 6, 23, 0.8)"/>
+                        </linearGradient>
+                        <linearGradient id="manifoldFill" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="rgba(0, 245, 255, 0.25)"/>
+                            <stop offset="100%" stop-color="rgba(168, 85, 247, 0.25)"/>
+                        </linearGradient>
+                        <linearGradient id="manifoldStroke" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#00f5ff"/>
+                            <stop offset="100%" stop-color="#a855f7"/>
+                        </linearGradient>
+                    </defs>
+
+                    <g>
+                        <path d="M 40 40 L 560 40 L 500 300 L 80 300 Z" fill="url(#planeGrad)" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+                        <path d="M 150 40 L 170 300 M 270 40 L 260 300 M 390 40 L 370 300" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                        <path d="M 70 100 L 540 100 M 85 190 L 515 190" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                    </g>
+
+                    <g fill="#475569" opacity="0.5">
+                        <circle cx="110" cy="80" r="2.5"/><circle cx="470" cy="70" r="2.5"/>
+                        <circle cx="420" cy="270" r="2.5"/><circle cx="150" cy="250" r="2.5"/>
+                    </g>
+
+                    <path d="M 80 230 C 170 90, 330 310, 520 120" fill="none" stroke="url(#manifoldStroke)" stroke-width="6" stroke-linecap="round"/>
+                    <path d="M 80 230 C 170 90, 330 310, 520 120 L 505 160 C 330 330, 170 130, 95 260 Z" fill="url(#manifoldFill)" opacity="0.9"/>
+
+                    <g>
+                        <circle cx="132" cy="170" r="6.5" fill="#00f5ff"/>
+                        <circle cx="218" cy="172" r="6.5" fill="#00f5ff"/>
+                        <circle cx="290" cy="226" r="6.5" fill="#3b82f6"/>
+                        <circle cx="388" cy="210" r="6.5" fill="#a855f7"/>
+                        <circle cx="452" cy="154" r="6.5" fill="#a855f7"/>
+                    </g>
+
+                    <g transform="translate(300, 15)">
+                        <rect x="-105" y="-10" width="210" height="20" fill="#020617" rx="4" stroke="rgba(255,255,255,0.08)"/>
+                        <text x="0" y="4" fill="#94a3b8" text-anchor="middle" font-size="10" font-weight="700" letter-spacing="0.5">AMBIENT NOISY SPACE R^D</text>
+                    </g>
+                    <g transform="translate(300, 320)">
+                        <rect x="-125" y="-12" width="250" height="24" fill="rgba(0, 245, 255, 0.1)" rx="6" stroke="#00f5ff" stroke-width="1"/>
+                        <text x="0" y="4" fill="#00f5ff" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="0.5">LOW-DIMENSIONAL MANIFOLD R^d</text>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- THE ENCODER -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">The <span>Encoder Network</span></h2>
+        <div class="grid-2">
+            <div>
+                <div style="font-size: 34px; color: var(--cyan); margin-bottom: 15px;">
+                    $$f_\theta(x) = z$$
+                </div>
+                <p>The encoder runs deterministic non-linear reductions, map-compressing input instances down into code spaces.</p>
+                <ul>
+                    <li>Constructs dense architectural mappings.</li>
+                    <li>Saves localized geometric properties.</li>
+                </ul>
+            </div>
+
+            <div class="glass" style="padding: 10px; display: flex; align-items: center; justify-content: center; height: 320px;">
+                <svg width="100%" height="100%" viewBox="0 0 680 340" style="overflow: visible;">
+                    <rect x="80" y="40" width="50" height="260" rx="25" fill="rgba(255,255,255,0.01)" stroke="rgba(255,255,255,0.08)"/>
+                    <rect x="290" y="70" width="50" height="200" rx="25" fill="rgba(59,130,246,0.03)" stroke="rgba(59,130,246,0.2)"/>
+
+                    <g fill="none" stroke="rgba(59, 130, 246, 0.4)" stroke-width="2">
+                        <path d="M 105 80 C 180 80, 200 120, 315 120" /><path d="M 105 80 C 180 80, 200 170, 315 170" />
+                        <path d="M 105 170 C 180 170, 200 120, 315 120" /><path d="M 105 170 C 180 170, 200 170, 315 170" /><path d="M 105 170 C 180 170, 200 220, 315 220" />
+                        <path d="M 105 260 C 180 260, 200 170, 315 170" /><path d="M 105 260 C 180 260, 200 220, 315 220" />
+                    </g>
+                    <g fill="none" stroke="rgba(0, 245, 255, 0.6)" stroke-width="3.5">
+                        <path d="M 315 120 C 400 120, 440 170, 540 170" />
+                        <path d="M 315 170 C 400 170, 440 170, 540 170" />
+                        <path d="M 315 220 C 400 220, 440 170, 540 170" />
+                    </g>
+
+                    <g fill="#0f172a" stroke="#3b82f6" stroke-width="2">
+                        <circle cx="105" cy="80" r="9"/><circle cx="105" cy="170" r="9"/><circle cx="105" cy="260" r="9"/>
+                    </g>
+                    <g fill="#1e3a8a" stroke="#60a5fa" stroke-width="2.5">
+                        <circle cx="315" cy="120" r="11"/><circle cx="315" cy="170" r="11"/><circle cx="315" cy="220" r="11"/>
+                    </g>
+
+                    <circle cx="540" cy="170" r="24" fill="#00f5ff"/>
+                    <circle cx="540" cy="170" r="16" fill="#ffffff"/>
+                    <text x="540" y="175" fill="#020617" text-anchor="middle" font-size="15" font-weight="800">z</text>
+
+                    <text x="105" y="325" fill="#94a3b8" text-anchor="middle" font-size="11" font-weight="700">INPUT (x)</text>
+                    <text x="315" y="325" fill="#60a5fa" text-anchor="middle" font-size="11" font-weight="700">HIDDEN</text>
+                    <text x="540" y="325" fill="#00f5ff" text-anchor="middle" font-size="11" font-weight="800">BOTTLENECK</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- THE BOTTLENECK -->
+<!-- ========================= -->
+
+<section>
+    <div class="slide-content centered">
+        <h2 class="slide-title" style="border:none; padding:0; text-align:center; margin-bottom: 30px !important;">
+            The Information <span>Bottleneck</span>
+        </h2>
+        
+        <div class="latent"></div>
+        
+        <ul style="max-width:800px; margin: 0 auto 30px auto !important; text-align: left; list-style: none;">
+            <li style="font-size: 22px; line-height: 1.5; margin-bottom: 16px;">
+                <strong style="color: var(--cyan);">Selective Filtering:</strong> Aggressively discards noise, retaining only features critical for reconstruction.
+            </li>
+            <li style="font-size: 22px; line-height: 1.5; margin-bottom: 16px;">
+                <strong style="color: var(--cyan);">Compact Manifold:</strong> Maps high-dimensional input to a low-dimensional latent space, capturing underlying structural variance.
+            </li>
+            <li style="font-size: 22px; line-height: 1.5; margin-bottom: 16px;">
+                <strong style="color: var(--cyan);">Capacity Constraint:</strong> Forcing data through a restricted bottleneck prevents identity memorization, enforcing generalization.
+            </li>
+        </ul>
+        
+        <p style="max-width:750px; margin:auto; font-size: 24px !important; font-weight: 600; line-height: 1.3; color: var(--emerald);">
+            Constraint drives abstraction.
+        </p>
+    </div>
+</section>
+<!-- ========================= -->
+<!-- THE DECODER -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">The <span>Decoder Network</span></h2>
+        <div class="grid-2">
+            <div class="glass" style="padding: 10px; display: flex; align-items: center; justify-content: center; height: 320px;">
+                <svg width="100%" height="100%" viewBox="0 0 680 340" style="overflow: visible;">
+                    <circle cx="120" cy="170" r="35" fill="rgba(0,245,255,0.02)" stroke="rgba(0,245,255,0.15)"/>
+                    <rect x="320" y="70" width="50" height="200" rx="25" fill="rgba(168,85,247,0.03)" stroke="rgba(168,85,247,0.2)"/>
+
+                    <g fill="none" stroke-width="3.5">
+                        <g stroke="rgba(0, 245, 255, 0.6)">
+                            <path d="M 120 170 C 210 170, 230 120, 320 120" />
+                            <path d="M 120 170 C 210 170, 230 170, 320 170" />
+                            <path d="M 120 170 C 210 170, 230 220, 320 220" />
+                        </g>
+                    </g>
+                    <g fill="none" stroke="rgba(168, 85, 247, 0.4)" stroke-width="2">
+                        <path d="M 320 120 C 400 120, 430 80, 520 80" /><path d="M 320 120 C 400 120, 430 170, 520 170" />
+                        <path d="M 320 170 C 400 170, 430 170, 520 170" />
+                        <path d="M 320 220 C 400 220, 430 170, 520 170" /><path d="M 320 220 C 400 220, 430 260, 520 260" />
+                    </g>
+
+                    <circle cx="120" cy="170" r="24" fill="#00f5ff"/>
+                    <circle cx="120" cy="170" r="16" fill="#ffffff"/>
+                    <text x="120" y="175" fill="#020617" text-anchor="middle" font-size="15" font-weight="800">z</text>
+
+                    <g fill="#4c1d95" stroke="#a855f7" stroke-width="2.5">
+                        <circle cx="320" cy="120" r="11"/><circle cx="320" cy="170" r="11"/><circle cx="320" cy="220" r="11"/>
+                    </g>
+                    <g fill="#0f172a" stroke="#7c3aed" stroke-width="2">
+                        <circle cx="520" cy="80" r="9"/><circle cx="520" cy="170" r="9"/><circle cx="520" cy="260" r="9"/>
+                    </g>
+
+                    <text x="120" y="325" fill="#00f5ff" text-anchor="middle" font-size="11" font-weight="800">LATENT (z)</text>
+                    <text x="320" y="325" fill="#a855f7" text-anchor="middle" font-size="11" font-weight="700">DECODER</text>
+                    <text x="520" y="325" fill="#cbd5e1" text-anchor="middle" font-size="11" font-weight="700">RECON (x̂)</text>
+                </svg>
+            </div>
+
+            <div>
+                <div style="font-size: 34px; color: var(--purple); margin-bottom: 15px;">
+                    $$g_\psi(z) = \hat{x}$$
+                </div>
+                <p>The decoder forms an expanding synthesis step, mirroring the encoder to up-project internal states back into full input coordinates.</p>
+                <ul>
+                    <li>Reconstructs raw structural forms from low-dimensional representations.</li>
+                    <li>Maintains consistency with the targeted data distribution.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- ENHANCED PRETTIER CODE SLIDE -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Modular <span>PyTorch Blueprint</span></h2>
+        
+        <div class="code-container">
+            <div class="code-header">
+                <div class="code-dots">
+                    <div class="code-dot r"></div>
+                    <div class="code-dot y"></div>
+                    <div class="code-dot g"></div>
+                </div>
+                <div class="code-lang">Python</div>
+            </div>
+            <pre class="code-body"><code><span class="k">class</span> <span class="f">Autoencoder</span>(nn.Module):
+    <span class="k">def</span> <span class="f">__init__</span>(self):
+        <span class="f">super</span>().__init__()
+        self.encoder = nn.<span class="f">Sequential</span>(
+            nn.<span class="f">Linear</span>(<span class="n">784</span>, <span class="n">128</span>),
+            nn.<span class="f">ReLU</span>(),
+            nn.<span class="f">Linear</span>(<span class="n">128</span>, <span class="n">32</span>)
+        )
+        self.decoder = nn.<span class="f">Sequential</span>(
+            nn.<span class="f">Linear</span>(<span class="n">32</span>, <span class="n">128</span>),
+            nn.<span class="f">ReLU</span>(),
+            nn.<span class="f">Linear</span>(<span class="n">128</span>, <span class="n">784</span>),
+            nn.<span class="f">Sigmoid</span>()
+        )
+
+    <span class="k">def</span> <span class="f">forward</span>(self, x):
+        <span class="k">return</span> self.<span class="f">decoder</span>(self.<span class="f">encoder</span>(x))</code></pre>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- OPTIMIZATION LOSS -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content centered">
+        <h2 class="slide-title" style="border:none; padding:0;">Autoencoder <span>Loss</span></h2>
+        <p style="max-width: 700px; margin: auto;">Optimization minimizes structural distortion by penalizing coordinate distance deviations between source inputs and reconstructions.</p>
+        <div class="formula-box">
+            <div class="formula">
+                $$\mathcal{L}_{\text{AE}}(\theta, \psi) = \mathbb{E}_{x} \left[ \| x - g_\psi(f_\theta(x)) \|^2 \right]$$
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- DENOISING AUTOENCODERS -->
+<!-- ========================= -->
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Robustness via <span>Denoising</span></h2>
+        <div class="grid-2">
+            <div>
+                <p>Denoising layers add stochastic noise fields to data before encoding. This setup forces the model to learn stable reconstruction steps.</p>
+                <ul>
+                    <li><strong>Orthogonal Projection:</strong> Traps corrupted inputs and returns them back to the data manifold.</li>
+                    <li><strong>Topology Discovery:</strong> Builds noise-resilient structural maps.</li>
+                </ul>
+            </div>
+            
+            <div class="image-box glass" style="display: flex; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box;">
+                <img loading="lazy" src="images/reconstruction.png" alt="Fluid abstraction" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+            </div>
+        </div>
+    </div>
+</section>
+<!-- ========================= -->
+<!-- GENERATIVE ASPECT -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Transitioning to <span>Generative Spaces</span></h2>
+        <div class="grid-2">
+            <div>
+                <p>When the internal bottleneck space becomes continuous, the decoder steps up into a structured asset synthesis mechanism.</p>
+                <ul>
+                    <li>Allows smooth linear variations between data identities.</li>
+                    <li>Serves as the structural framework for VAEs and Diffusion pipelines.</li>
+                </ul>
+            </div>
+
+            <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                <div style="font-size: 28px; color: var(--purple); margin-bottom: 8px; padding-right: 15px; font-weight:700;">
+                    $$g_\psi(z) = \hat{x}$$
+                </div>
+                <div class="glass" style="padding: 10px; display: flex; align-items: center; justify-content: center; height: 280px; width: 100%; box-sizing: border-box;">
+                    <svg width="100%" height="100%" viewBox="0 0 620 280" style="overflow: visible;">
+                        <defs>
+                            <radialGradient id="cosmosGlow" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="rgba(0, 245, 255, 0.2)"/>
+                                <stop offset="100%" stop-color="rgba(2, 6, 23, 0)"/>
+                            </radialGradient>
+                        </defs>
+
+                        <circle cx="100" cy="130" r="60" fill="url(#cosmosGlow)" stroke="rgba(0, 245, 255, 0.15)" stroke-width="1" stroke-dasharray="3 3"/>
+                        <g>
+                            <circle cx="80" cy="100" r="4" fill="#00f5ff"/>
+                            <circle cx="120" cy="130" r="5" fill="#ffffff"/>
+                            <circle cx="95" cy="160" r="4" fill="#3b82f6"/>
+                        </g>
+
+                        <path d="M 120 130 C 190 130, 210 130, 280 130" fill="none" stroke="rgba(0, 245, 255, 0.5)" stroke-width="2"/>
+
+                        <g>
+                            <rect x="280" y="85" width="80" height="90" rx="12" fill="rgba(168, 85, 247, 0.8)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                            <text x="320" y="137" fill="#fff" text-anchor="middle" font-size="16" font-weight="700">Decoder</text>
+                        </g>
+
+                        <g stroke="#a855f7" stroke-width="2">
+                            <path d="M 360 130 C 400 130, 410 60, 450 60" />
+                            <path d="M 360 130 C 400 130, 410 130, 450 130" />
+                            <path d="M 360 130 C 400 130, 410 200, 450 200" />
+                        </g>
+
+                        <g transform="translate(450, 25)">
+                            <rect x="0" y="0" width="80" height="60" fill="#0f172a" rx="8" stroke="#3b82f6" stroke-width="1"/>
+                        </g>
+                        <g transform="translate(450, 100)">
+                            <rect x="0" y="0" width="80" height="60" fill="#0f172a" rx="8" stroke="#00f5ff" stroke-width="2"/>
+                        </g>
+                        <g transform="translate(450, 175)">
+                            <rect x="0" y="0" width="80" height="60" fill="#0f172a" rx="8" stroke="#a855f7" stroke-width="1"/>
+                        </g>
+
+                        <text x="100" y="245" fill="#00f5ff" text-anchor="middle" font-size="10" font-weight="700">LATENT CODE (z)</text>
+                        <text x="320" y="245" fill="#a855f7" text-anchor="middle" font-size="10" font-weight="700">DECODER STEP</text>
+                        <text x="490" y="245" fill="#cbd5e1" text-anchor="middle" font-size="10" font-weight="700">SYNTHETIC OUTPUT</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- SUMMARY TAKEAWAYS -->
+<!-- ========================= -->
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Core Architectural <span>Takeaways</span></h2>
+        <div class="cards">
+            <div class="card glass">
+                <h3>Encoding</h3>
+                <p>Maps unorganized data entries into organized low-dimensional code blocks.</p>
+            </div>
+            <div class="card glass">
+                <h3>Regularization</h3>
+                <p>Forces network pipelines to extract structural topology metrics, ignoring raw static noise inputs.</p>
+            </div>
+            <div class="card glass">
+                <h3>Synthesis</h3>
+                <p>Repurposes modern expansion stages to output clean, novel structural generations.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= -->
+<!-- CLOSING SLIDE -->
+<!-- ========================= -->
+
+<section>
+    <div class="slide-content centered" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+        
+        <h1 class="hero-title" style="margin-bottom: 20px;">Questions?</h1>
+        <p class="hero-subtitle" style="margin-bottom: 30px;">Thank you for exploring representation spaces.</p>
+        
+        <div class="image-box glass" style="width: 400px; height: 300px; padding: 16px; display: flex; justify-content: center; align-items: center;">
+            <img loading="lazy" src="images/martino.png" alt="Fluid abstraction" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;" />
+        </div>
+        
+    </div>
+</section>
+
+</div> <!-- End .slides -->
+</div> <!-- End .reveal -->
+
+<!-- ========================= -->
+<!-- REVEAL JS ENGINE LOCAL -->
+<!-- ========================= -->
+<script src="reveal/reveal.js"></script>
+<script>
+window.addEventListener("load", () => {
+    Reveal.initialize({
+        hash: true,
+        controls: true,
+        progress: true,
+        center: true,
+        width: 1100,
+        height: 700,
+        margin: 0.05,
+        minScale: 0.2,
+        maxScale: 1.5,
+        transition: "slide"
+    });
+    if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false }
+            ],
+            throwOnError: false
+        });
+    }
+});
+</script>
+</body>
+</html>
