@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Transfer Learning & Fine-Tuning Strategies</title>
+
+<!-- ========================= -->
+<!-- REVEAL.JS LOCAL -->
+<!-- ========================= -->
+<link rel="stylesheet" href="reveal/reset.css" />
+<link rel="stylesheet" href="reveal/reveal.css" />
+<link rel="stylesheet" href="reveal/black.css" />
+
+<!-- ========================= -->
+<!-- FONTS LOCAL -->
+<!-- ========================= -->
+<link rel="stylesheet" href="fonts/fonts.css" />
+
+<!-- ========================= -->
+<!-- KATEX LOCAL -->
+<!-- ========================= -->
+<link rel="stylesheet" href="katex/katex.min.css" />
+<script defer src="katex/katex.min.js"></script>
+<script defer src="katex/auto-render.min.js"></script>
+
+<style>
+/* =========================
+   ROOT & VARIABLES
+========================= */
+:root {
+    --bg: #030712;
+    --bg-soft: #111827;
+    --text: #f9fafb;
+    --muted: #9ca3af;
+    --cyan: #38bdf8;
+    --emerald: #34d399;
+    --amber: #fbbf24;
+    --purple: #c084fc;
+    --pink: #f472b6;
+    --glass: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.07);
+    --radius: 16px;
+    
+    /* Code Editor Syntax Colors */
+    --code-bg: #0b0f17;
+    --code-keyword: #f472b6;
+    --code-fn: #38bdf8;
+    --code-num: #fbbf24;
+    --code-str: #34d399;
+    --code-comment: #6b7280;
+}
+
+body {
+    background: var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.08), transparent 45%),
+        radial-gradient(circle at 15% 85%, rgba(52, 211, 153, 0.08), transparent 45%);
+    filter: blur(60px);
+    z-index: -1;
+}
+
+/* =========================
+   REVEAL OVERRIDES
+========================= */
+.reveal {
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+}
+.reveal .slides {
+    text-align: left;
+}
+.reveal h1, .reveal h2, .reveal h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    text-transform: none;
+    letter-spacing: -0.5px;
+}
+
+.slide-content {
+    padding: 10px 30px;
+    box-sizing: border-box;
+    max-height: 620px; 
+    overflow: hidden;
+}
+
+/* =========================
+   TYPOGRAPHY
+========================= */
+.hero-title {
+    font-size: 72px !important;
+    line-height: 1.1;
+    font-weight: 800;
+    margin-bottom: 20px;
+}
+.hero-title span {
+    background: linear-gradient(135deg, var(--cyan), var(--emerald));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.hero-subtitle {
+    font-size: 24px;
+    color: var(--muted);
+    font-weight: 300;
+}
+.slide-title {
+    font-size: 38px !important;
+    margin-bottom: 25px !important;
+    border-left: 5px solid var(--emerald);
+    padding-left: 15px;
+    font-weight: 700;
+}
+.slide-title span {
+    color: var(--emerald);
+}
+p {
+    font-size: 19px !important;
+    line-height: 1.45 !important;
+    color: #d1d5db;
+    margin-bottom: 14px !important;
+}
+
+ul {
+    list-style: none !important;
+    margin: 15px 0 0 0 !important;
+    padding-left: 0 !important;
+}
+li {
+    position: relative;
+    padding-left: 25px;
+    margin-bottom: 12px;
+    font-size: 19px;
+    line-height: 1.4;
+    color: #e5e7eb;
+}
+li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 12px;
+    height: 2px;
+    background: var(--cyan);
+    border-radius: 1px;
+}
+
+/* =========================
+   LAYOUT MATRIX
+========================= */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: center;
+}
+.grid-2-large-right {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 35px;
+    align-items: center;
+}
+.cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 15px;
+}
+.cards-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    margin-top: 15px;
+}
+.centered {
+    text-align: center;
+}
+
+/* =========================
+   UI CONTAINERS & GLASS
+========================= */
+.glass {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+}
+.card {
+    padding: 24px;
+}
+.card h3 {
+    font-size: 22px;
+    margin-bottom: 10px;
+    font-weight: 700;
+    color: var(--cyan);
+}
+.card p {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+    color: #cbd5e1;
+}
+
+.image-box {
+    overflow: hidden;
+    border-radius: var(--radius);
+    height: 320px;
+}
+.image-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* =========================
+   FORMULAS
+========================= */
+.formula-box {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 15px 30px;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.formula {
+    font-size: 32px;
+    color: var(--cyan);
+}
+
+/* =========================
+   PREMIUM CUSTOM CODE BLOCK
+========================= */
+.code-container {
+    background: var(--code-bg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    overflow: hidden;
+    width: 100%;
+    margin-top: 5px;
+}
+.code-header {
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.code-dots {
+    display: flex;
+    gap: 6px;
+}
+.code-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+.code-dot.r { background: #ff5f56; }
+.code-dot.y { background: #ffbd2e; }
+.code-dot.g { background: #27c93f; }
+.code-lang {
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.code-body {
+    padding: 16px 20px;
+    margin: 0;
+    overflow-x: auto;
+}
+.code-body code {
+    font-family: 'Fira Code', monospace !important;
+    font-size: 13.5px !important;
+    line-height: 1.45 !important;
+    color: #e2e8f0;
+    white-space: pre;
+    display: block;
+}
+
+/* Custom Highlight Tokens */
+.k { color: var(--code-keyword); font-weight: 600; }
+.f { color: var(--code-fn); }
+.n { color: var(--code-num); }
+.s { color: var(--code-str); }
+.c { color: var(--code-comment); font-style: italic; }
+</style>
+</head>
+
+<body>
+<div class="reveal">
+<div class="slides">
+
+<section>
+    <div class="slide-content">
+        <h1 class="hero-title">
+            Parameter-Efficient <br>
+            <span>Fine-Tuning</span>
+        </h1>
+        <p class="hero-subtitle">
+            Efficiently adapting large-scale models for specialized downstream tasks.
+        </p>
+    </div>
+</section>
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">The Adaptation Spectrum: <span>Classic vs. Scale</span></h2>
+        <div class="grid-2">
+            <div>
+                <p>Traditional transfer learning adapted models by modifying specific architectural components.</p>
+                <ul>
+                    <li><strong>Feature Extraction:</strong> Freezing the pre-trained backbone ($W_0$) and exclusively training shallow, task-specific classification heads.</li>
+                    <li><strong>Full Fine-Tuning:</strong> Updating all network parameters across every layer via end-to-end backpropagation.</li>
+                </ul>
+            </div>
+            <div class="glass card" style="border-left: 4px solid var(--cyan);">
+                <h3 style="color: var(--cyan);">The Scalability Wall</h3>
+                <p>While full fine-tuning maximizes task performance, scaling models beyond the billion-parameter threshold renders global weight updates computationally prohibitive due to massive memory overheads.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Full Fine-Tuning: <span>Scaling Challenges</span></h2>
+        <p>While end-to-end fine-tuning maximizes task adaptation capacity, updating every parameter in modern LLMs rapidly becomes computationally and operationally prohibitive.</p>
+
+        <div class="cards-2">
+
+            <div class="card glass" style="border-top: 4px solid var(--cyan);">
+                <h3>Exploding Memory Requirements</h3>
+                <p>Training requires storing model weights, gradients, optimizer states, and activations simultaneously. For multi-billion parameter models, total VRAM consumption quickly exceeds the capacity of standard accelerator hardware.</p>
+            </div>
+
+            <div class="card glass" style="border-top: 4px solid var(--pink);">
+                <h3>Catastrophic Forgetting</h3>
+                <p>Updating the full parameter space can overwrite generalized representations learned during pre-training, reducing robustness and degrading performance on previously acquired capabilities.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">The PEFT Paradigm & <span>Memory Bottlenecks</span></h2>
+        <div class="grid-2">
+            <div>
+                <p>As large language models scale, full fine-tuning becomes bottlenecked by <strong>severe VRAM constraints</strong>.</p>
+                <ul>
+                    <li><strong>The AdamW Overhead:</strong> Standard optimization requires tracking weights, gradients, and an additional 12 bytes per parameter for optimizer states (e.g., momentum and variance).</li>
+                    <li><strong>Parameter Efficiency:</strong> PEFT approaches freeze the base model and introduce a minimal set of trainable parameters, typically optimizing <1% of the total network.</li>
+                </ul>
+            </div>
+            <div class="glass card" style="border-left: 4px solid var(--purple);">
+                <h3 style="color: var(--purple);">VRAM Allocation Breakdown</h3>
+                <p style="font-size:15px !important; margin-bottom:8px !important;">For a standard FP16 7B Parameter Model:</p>
+                <table style="width:100%; font-size:14px; border-collapse:collapse; color:#cbd5e1;">
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                        <td style="padding:6px 0;">Model Weights</td>
+                        <td style="text-align:right; color:var(--cyan);">14 GB (2B per param)</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                        <td style="padding:6px 0;">Gradients</td>
+                        <td style="text-align:right; color:var(--pink);">14 GB (2B per param)</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                        <td style="padding:6px 0;">Optimizer States</td>
+                        <td style="text-align:right; color:var(--amber);">42 GB (6B per param)</td>
+                    </tr>
+                    <tr style="font-weight:700;">
+                        <td style="padding:6px 0; color:var(--emerald);">Total VRAM Needed</td>
+                        <td style="text-align:right; color:var(--emerald);">> 70 GB</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">LoRA: <span>Low-Rank Adaptation Mechanics</span></h2>
+
+        <div class="grid-2-large-right">
+            <div>
+                <p>LoRA operates on the <strong>Intrinsic Rank Hypothesis</strong>, which posits that model adaptations ($\Delta W$) possess a low intrinsic dimension.</p>
+
+                <ul>
+                    <li>Instead of directly optimizing $W_0 \in \mathbb{R}^{d \times k}$, LoRA decomposes the weight update into two low-rank matrices, $A$ and $B$.</li>
+
+                    <li>
+                        <strong>Rank ($r$):</strong>
+                        Dictates the inner bottleneck dimension. By setting
+                        $r \ll \min(d, k)$, the trainable parameter count drops drastically.
+                    </li>
+                </ul>
+            </div>
+
+            <div style="text-align: center;">
+
+                <div class="formula-box"
+                     style="
+                        width: 88%;
+                        margin: 12px auto 0 auto;
+                        padding: 12px 22px;
+                        box-sizing: border-box;
+                     ">
+
+                    <p style="
+                        font-size:14px !important;
+                        color:var(--muted);
+                        margin-bottom:2px !important;
+                    ">
+                        Mathematical Forward Formulation
+                    </p>
+
+                    <span class="formula" style="font-size:24px;">
+                        $$h = W_0 x + \Delta W x = W_0 x + \frac{\alpha}{r} B A x$$
+                    </span>
+                </div>
+
+                <p style="
+                    font-size:14px !important;
+                    color:var(--muted);
+                    text-align:left;
+                    margin-top:10px;
+                ">
+                    Matrix $B \in \mathbb{R}^{d \times r}$ is zero-initialized,
+                    and $A \in \mathbb{R}^{r \times k}$ is Gaussian-initialized.
+                    This ensures $\Delta W = 0$ at the start of training,
+                    preserving the original pre-trained representations.
+                </p>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">LoRA: <span>Parallel Structural Path</span></h2>
+
+        <div class="grid-2">
+            <div>
+                <p>
+                    For inference deployment, the learned low-rank matrices can be
+                    <strong>algebraically merged</strong> into the base weights ($W_0$),
+                    resulting in zero added latency.
+                </p>
+
+                <ul>
+                    <li>
+                        <strong>Target Modules:</strong>
+                        Typically applied to self-attention projection matrices
+                        ($W_q, W_v$) or extended to all linear layers.
+                    </li>
+
+                    <li>
+                        <strong>Scaling Factor ($\alpha$):</strong>
+                        A constant tuning parameter that scales the adapter's activation,
+                        decoupling the update magnitude from the learning rate.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="glass"
+                 style="
+                    padding: 6px 18px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 330px;
+                 ">
+
+                <svg width="122%"
+                     height="100%"
+                     viewBox="0 0 440 300"
+                     style="overflow: visible;">
+
+                    <!-- Input -->
+                    <rect x="170" y="240" width="110" height="35" rx="6"
+                          fill="var(--bg-soft)"
+                          stroke="#9ca3af"
+                          stroke-width="1.5"/>
+
+                    <text x="225" y="262"
+                          fill="#f9fafb"
+                          text-anchor="middle"
+                          font-size="12"
+                          font-weight="700">
+                        Input Vector (x)
+                    </text>
+
+                    <!-- Split paths -->
+                    <path d="M 170 257 L 95 257 L 95 150"
+                          fill="none"
+                          stroke="#9ca3af"
+                          stroke-width="1.5"
+                          stroke-dasharray="3 3"/>
+
+                    <path d="M 280 257 L 345 257 L 345 190"
+                          fill="none"
+                          stroke="#9ca3af"
+                          stroke-width="1.5"
+                          stroke-dasharray="3 3"/>
+
+                    <!-- Frozen base -->
+                    <rect x="20" y="90"
+                          width="145"
+                          height="60"
+                          rx="8"
+                          fill="rgba(56, 189, 248, 0.05)"
+                          stroke="var(--cyan)"
+                          stroke-width="2"/>
+
+                    <text x="92" y="120"
+                          fill="var(--cyan)"
+                          text-anchor="middle"
+                          font-size="12"
+                          font-weight="700">
+                        Frozen Base Weights
+                    </text>
+
+                    <text x="92" y="136"
+                          fill="#9ca3af"
+                          text-anchor="middle"
+                          font-size="10">
+                        $W_0 \in \mathbb{R}^{d \times k}$
+                    </text>
+
+                    <!-- Matrix A -->
+                    <polygon points="285,190 405,190 370,140 320,140"
+                             fill="rgba(244, 114, 182, 0.1)"
+                             stroke="var(--pink)"
+                             stroke-width="1.5"/>
+
+                    <text x="345" y="170"
+                          fill="var(--pink)"
+                          text-anchor="middle"
+                          font-size="11"
+                          font-weight="700">
+                        Matrix A (r × k)
+                    </text>
+
+                    <!-- Matrix B -->
+                    <polygon points="320,130 370,130 405,80 285,80"
+                             fill="rgba(192, 132, 252, 0.1)"
+                             stroke="var(--purple)"
+                             stroke-width="1.5"/>
+
+                    <text x="345" y="110"
+                          fill="var(--purple)"
+                          text-anchor="middle"
+                          font-size="11"
+                          font-weight="700">
+                        Matrix B (d × r)
+                    </text>
+
+                    <!-- Merge paths -->
+                    <path d="M 92 90 L 92 40 L 200 40"
+                          fill="none"
+                          stroke="#9ca3af"
+                          stroke-width="1.5"/>
+
+                    <path d="M 345 80 L 345 40 L 250 40"
+                          fill="none"
+                          stroke="#9ca3af"
+                          stroke-width="1.5"/>
+
+                    <!-- Summation -->
+                    <circle cx="225"
+                            cy="40"
+                            r="16"
+                            fill="var(--bg-soft)"
+                            stroke="var(--amber)"
+                            stroke-width="2"/>
+
+                    <text x="225" y="44"
+                          fill="var(--amber)"
+                          text-anchor="middle"
+                          font-size="16"
+                          font-weight="700">
+                        +
+                    </text>
+
+                    <!-- Output -->
+                    <path d="M 225 24 L 225 5"
+                          fill="none"
+                          stroke="#9ca3af"
+                          stroke-width="1.5"/>
+
+                    <text x="240"
+                          y="10"
+                          fill="#9ca3af"
+                          font-size="11">
+                        Output (h)
+                    </text>
+
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">QLoRA: <span>4-Bit Quantized Fine-Tuning</span></h2>
+        <p>QLoRA democratizes LLM fine-tuning by compressing the frozen base model into a high-fidelity 4-bit representation, enabling execution on single consumer GPUs.</p>
+        <div class="cards">
+            <div class="card glass" style="border-top: 4px solid var(--cyan);">
+                <h3>NormalFloat 4 (NF4)</h3>
+                <p>An information-theoretically optimal data type designed for normally distributed model weights, yielding higher precision than standard FP4.</p>
+            </div>
+            <div class="card glass" style="border-top: 4px solid var(--emerald);">
+                <h3>Double Quantization</h3>
+                <p>Quantizes the quantization constants themselves. This secondary compression saves an additional ~0.37 bits per parameter with negligible performance degradation.</p>
+            </div>
+            <div class="card glass" style="border-top: 4px solid var(--amber);">
+                <h3>Paged Optimizers</h3>
+                <p>Leverages CUDA Unified Memory to page optimizer states to CPU RAM during memory spikes, preventing Out-Of-Memory (OOM) errors during heavy context processing.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">PEFT & LoRA: <span>Programmatic Execution</span></h2>
+        <div class="code-container">
+            <div class="code-header">
+                <div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div>
+                <div class="code-lang">Python</div>
+            </div>
+            <div class="code-body">
+                <code><span class="k">from</span> peft <span class="k">import</span> LoraConfig, get_peft_model
+<span class="k">from</span> transformers <span class="k">import</span> AutoModelForCausalLM
+
+peft_config = <span class="f">LoraConfig</span>(
+    r=<span class="n">16</span>,
+    lora_alpha=<span class="n">32</span>,
+    target_modules=[<span class="s">"q_proj"</span>, <span class="s">"v_proj"</span>],
+    lora_dropout=<span class="n">0.05</span>,
+    bias=<span class="s">"none"</span>,
+    task_type=<span class="s">"CAUSAL_LM"</span>
+)
+
+model = AutoModelForCausalLM.<span class="f">from_pretrained</span>(<span class="s">"meta-llama/Llama-3-8B"</span>)
+model = <span class="f">get_peft_model</span>(model, peft_config)
+model.<span class="f">print_trainable_parameters</span>() <span class="c"># Outputs: trainable params: ~0.11% of total</span></code>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="slide-content">
+        <h2 class="slide-title">Strategic Trade-offs <span>& Engineering Synthesis</span></h2>
+        <p>Selecting an adaptation strategy requires balancing hardware limitations against the complexity of the target downstream task.</p>
+        <div class="cards-2">
+            <div class="glass card" style="border-top: 4px solid var(--emerald);">
+                <h3 style="color:var(--emerald);">Full Tuning vs. Adapters</h3>
+                <p style="font-size:14px !important;">While full fine-tuning offers the highest theoretical capacity for complex domain shifts, it risks catastrophic forgetting and generates massive checkpoints. LoRA mitigates parameter drift and produces highly portable, megabyte-sized adapter files.</p>
+            </div>
+            <div class="glass card" style="border-top: 4px solid var(--amber);">
+                <h3 style="color:var(--amber);">Compute vs. Memory Limits</h3>
+                <p style="font-size:14px !important;">QLoRA drastically lowers the VRAM barrier to entry, but trades off training speed. Continuous runtime de-quantization from 4-bit to 16-bit introduces compute latency during the backward pass.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="slide-content centered" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+        <h1 class="hero-title">Questions?</h1>
+        <p class="hero-subtitle" style="margin:auto; margin-bottom: 20px !important;">Thank you for exploring the boundaries of model adaptation.</p>
+        <div class="image-box glass" style="width: 400px; height: 260px; padding: 16px; display: flex; justify-content: center; align-items: center;">
+            <img loading="lazy" src="images/martino.png" alt="Fluid abstraction" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;" />
+        </div>
+    </div>
+</section>
+
+</div>
+</div>
+
+<script src="reveal/reveal.js"></script>
+<script>
+window.addEventListener("load", () => {
+    Reveal.initialize({
+        hash: true,
+        controls: true,
+        progress: true,
+        center: true,
+        width: 1100,
+        height: 700,
+        margin: 0.05,
+        minScale: 0.2,
+        maxScale: 1.5,
+        transition: "slide"
+    });
+    if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+            delimiters: [
+                { left: "$$", right: "$$", display: true },
+                { left: "$", right: "$", display: false }
+            ],
+            throwOnError: false
+        });
+    }
+});
+</script>
+</body>
+</html>
