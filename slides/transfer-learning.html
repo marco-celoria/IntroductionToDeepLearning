@@ -309,7 +309,7 @@ li::before {
             <span>Fine-Tuning Strategies</span>
         </h1>
         <p class="hero-subtitle">
-            Leveraging broad inductive biases to optimize specialized downstream tasks.
+            Applying general knowledge to solve specialized problems.
         </p>
     </div>
 </section>
@@ -322,10 +322,12 @@ li::before {
         <h2 class="slide-title">The Core <span>Paradigm Shift</span></h2>
         <div class="grid-2">
             <div>
-                <p>Training models from scratch demands massive compute resources and vast datasets. Transfer learning bypasses this by treating pre-trained parameter topologies as foundational intelligence assets.</p>
+                <p>Training models from scratch demands massive compute resources and vast datasets.</p> 
+                    
+                <p> Transfer learning bypasses this by means of:</p>
                 <ul>
                     <li><strong>Feature Inheritance:</strong> Retains lower-level representations (edges, grammar patterns).</li>
-                    <li><strong>Sample Efficiency:</strong> Achieves convergence with minor downstream data pipelines.</li>
+                    <li><strong>Sample Efficiency:</strong> Reaches convergence with minimal task-specific data.</li>
                 </ul>
             </div>
             <div class="image-box glass" style="display: flex; flex-direction: column; gap: 12px; padding: 12px; box-sizing: border-box; justify-content: center; align-items: center; height: auto; max-height: 500px;">
@@ -344,8 +346,8 @@ li::before {
         <h2 class="slide-title">Formal <span>Mathematical Boundary</span></h2>
         <div class="grid-2-large-right">
             <div>
-                <p>We declare a Domain $\mathcal{D} = \{\mathcal{X}, P(X)\}$ and a Task $\mathcal{T} = \{\mathcal{Y}, f(x)\}$. Transfer learning moves predictive systems from a source environment to target variations:</p>
-                <p>Where either domain dimensions or label boundaries diverge:</p>
+                <p>Consider the Domain $\mathcal{D} = \{\mathcal{X}, P(X)\}$, where $\mathcal{X}$ is the Feature Space and $P(X)$ is the Marginal Probability Distribution on $\mathcal{X}$, and the Task $\mathcal{T} = \{\mathcal{Y}, f(x)\}$ where $\mathcal{Y}$ is the Label Space and $f(x)$ is the Predictive Function.</p>
+<p> Transfer learning moves predictive systems from a source environment to target variations:</p>
                 <ul>
                     <li>$\mathcal{X}_S \neq \mathcal{X}_T$ (Feature Space Shift)</li>
                     <li>$\mathcal{Y}_S \neq \mathcal{Y}_T$ (Label Set Divergence)</li>
@@ -401,7 +403,7 @@ li::before {
                 <p>Deep architectures stratify representations across successive processing blocks:</p>
                 <ul>
                     <li><strong>Early Layers:</strong> Highly generalizable features (Gabor filters, basic textures, positional structural syntax).</li>
-                    <li><strong>Deep Layers:</strong> Hyper-specific contextual metrics linked closely to the original source objective functions.</li>
+                    <li><strong>Deep Layers:</strong> Hyper-specific contextual metrics linked to the original source objective functions.</li>
                 </ul>
             </div>
 
@@ -650,7 +652,7 @@ model.fc = nn.<span class="f">Linear</span>(model.fc.in_features, <span class="n
 <!-- ========================= -->
 <!-- IMPLICIT REGULARIZATION THEORY -->
 <!-- ========================= -->
-<section>
+<!--<section>
     <div class="slide-content centered">
         <h2 class="slide-title" style="border:none; padding:0;">The Power of <span>Implicit Regularization</span></h2>
         <p style="max-width: 820px; margin: auto;">You do not need complex explicit cost functions to protect representations. Staged training enforces structural integrity through <strong>Temporal Isolation</strong>:</p>
@@ -665,7 +667,7 @@ model.fc = nn.<span class="f">Linear</span>(model.fc.in_features, <span class="n
         </p>
     </div>
 </section>
-
+ -->
 <!-- ========================= -->
 <!-- EXECUTION BLUEPRINT -->
 <!-- ========================= -->
@@ -743,35 +745,35 @@ optimizer = optim.<span class="f">Adam</span>([
 <!-- ========================= -->
 <section>
     <div class="slide-content">
-        <h2 class="slide-title">The Strategic <span>Decision Matrix</span></h2>
+        <h2 class="slide-title">Choosing a <span>Fine-Tuning Strategy</span></h2>
         <div class="grid-2-large-right">
             <div>
-                <p>Downstream structural deployment paths map cleanly along two primary dimensional axes:</p>
+                <p>Deciding how to adapt a pre-trained model depends on two main factors:</p>
                 <ul>
-                    <li><strong>Data Volume:</strong> Count of training instances available.</li>
-                    <li><strong>Domain Distance:</strong> Dimensional shift variance between environments.</li>
+                    <li><strong>Dataset Size:</strong> How much new training data you have.</li>
+                    <li><strong>Data Similarity:</strong> How similar your new data is to the model's original training data.</li>
                 </ul>
             </div>
-            
+
             <div class="glass" style="padding: 15px; height:320px; box-sizing:border-box;">
                 <table style="width:100%; height:100%; border-collapse:collapse; font-size:14px; color:#cbd5e1;">
                     <thead>
                         <tr style="border-bottom:2px solid rgba(255,255,255,0.15);">
-                            <th style="padding:12px 8px; color:var(--cyan); font-weight:800;">Dataset vs Domain</th>
-                            <th style="padding:12px 8px; font-weight:700;">Similar Domain</th>
-                            <th style="padding:12px 8px; font-weight:700;">Different Domain</th>
+                            <th style="padding:12px 8px; color:var(--cyan); font-weight:800;">Dataset vs. Similarity</th>
+                            <th style="padding:12px 8px; font-weight:700;">Similar to Original Data</th>
+                            <th style="padding:12px 8px; font-weight:700;">Different from Original Data</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-                            <td style="padding:14px 8px; font-weight:700; color:var(--emerald);">Small Target Data</td>
-                            <td style="padding:14px 8px; color:var(--cyan);">Linear Classifier Head<br><small style="color:var(--muted);">(Freeze Backbone)</small></td>
-                            <td style="padding:14px 8px; color:var(--amber);">Expose Deep Layers Only<br><small style="color:var(--muted);">(High Overfit Risk)</small></td>
+                            <td style="padding:14px 8px; font-weight:700; color:var(--emerald);">Small Dataset</td>
+                            <td style="padding:14px 8px; color:var(--cyan);">Train Output Layer Only<br><small style="color:var(--muted);">(Freeze the rest of the model)</small></td>
+                            <td style="padding:14px 8px; color:var(--amber);">Train Top Layers Only<br><small style="color:var(--muted);">(Warning: High risk of overfitting)</small></td>
                         </tr>
                         <tr>
-                            <td style="padding:14px 8px; font-weight:700; color:var(--emerald);">Large Target Data</td>
-                            <td style="padding:14px 8px; color:var(--emerald);">Tune Top Blocks<br><small style="color:var(--muted);">(Low Learning Rate)</small></td>
-                            <td style="padding:14px 8px; color:var(--purple);">Full Backbone Fine-Tune<br><small style="color:var(--muted);">(Or PEFT/LoRA Layers)</small></td>
+                            <td style="padding:14px 8px; font-weight:700; color:var(--emerald);">Large Dataset</td>
+                            <td style="padding:14px 8px; color:var(--emerald);">Fine-Tune Top Layers<br><small style="color:var(--muted);">(Use a low learning rate)</small></td>
+                            <td style="padding:14px 8px; color:var(--purple);">Train the Entire Model<br><small style="color:var(--muted);">(Or use efficient methods like LoRA)</small></td>
                         </tr>
                     </tbody>
                 </table>
@@ -789,7 +791,7 @@ optimizer = optim.<span class="f">Adam</span>([
         <div class="cards">
             <div class="card glass">
                 <h3>Efficiency</h3>
-                <p>Inherits general lower representations to minimize pipeline compute costs and dataset size mandates.</p>
+                <p>Reuses the model's basic knowledge to save computing power and reduce the amount of new data needed.</p>
             </div>
             <div class="card glass">
                 <h3>Stability</h3>

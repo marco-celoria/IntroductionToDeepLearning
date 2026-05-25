@@ -361,8 +361,8 @@ li::before {
             <div>
                 <p>As large language models scale, full fine-tuning becomes bottlenecked by <strong>severe VRAM constraints</strong>.</p>
                 <ul>
-                    <li><strong>The AdamW Overhead:</strong> Standard optimization requires tracking weights, gradients, and an additional 12 bytes per parameter for optimizer states (e.g., momentum and variance).</li>
-                    <li><strong>Parameter Efficiency:</strong> PEFT approaches freeze the base model and introduce a minimal set of trainable parameters, typically optimizing <1% of the total network.</li>
+                    <li><strong>AdamW Overhead:</strong> Standard optimization requires tracking weights, gradients, and an additional 12 bytes per parameter for optimizer states.</li>
+                    <li><strong>Parameter Efficiency:</strong> PEFT approaches freeze the base model and introduce a minimal set of trainable parameters, optimizing <1% of the total network.</li>
                 </ul>
             </div>
             <div class="glass card" style="border-left: 4px solid var(--purple);">
@@ -467,8 +467,8 @@ li::before {
                 <ul>
                     <li>
                         <strong>Target Modules:</strong>
-                        Typically applied to self-attention projection matrices
-                        ($W_q, W_v$) or extended to all linear layers.
+                        In transformer models, LoRA is usually added to the query and value projection layers inside self-attention, 
+                        but it can also be applied to other fully connected layers in the model.
                     </li>
 
                     <li>
