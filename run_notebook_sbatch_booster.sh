@@ -11,10 +11,10 @@
 #SBATCH --cpus-per-task=32
 #SBATCH --error logs/jupyter-booster-%j.err
 #SBATCH --output logs/jupyter-booster-%j.out
+#SBATCH -A tra26_deepln
 # Enable cuda and load the python module and enable the venv.
 module load profile/deeplrn
 module load cineca-ai/4.3.0
-#source /leonardo/home/userinternal/mcelori1/IntroductionToDeepLearning/pyvenv_llm/bin/activate
 # Get the worker list associated to this slurm job
 worker_list=($(scontrol show hostnames "$SLURM_JOB_NODELIST"))
 
